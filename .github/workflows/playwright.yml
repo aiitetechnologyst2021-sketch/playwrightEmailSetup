@@ -1,0 +1,44 @@
+name: Playwright Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    env:
+      SMTP_HOST: ${{ secrets.SMTP_HOST }}
+      SMTP_PORT: ${{ secrets.SMTP_PORT }}
+      SMTP_USER: ${{ secrets.SMTP_USER }}
+      SMTP_PASS: ${{ secrets.SMTP_PASS }}
+      REPORT_RECIPIENT: ${{ secrets.REPORT_RECIPIENT }}
+      REPORT_SENDER: ${{ secrets.REPORT_SENDER }}
+      REPORT_SUBJECT: Playwright report run ${{ github.run_number }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Run Playwright tests and generate HTML report
+        run: npx playwright test --reporter=html
+
+      - name: Send Playwright HTML report by email
+        if: always()
+        run: node send-playwright-report.js
